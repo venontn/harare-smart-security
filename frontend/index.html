@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HSUSMS — Harare Command Center</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">
+      <span class="logo">HSUSMS</span>
+      <div>
+        <h1>Harare Smart Urban Security</h1>
+        <p>Central Command &amp; Control Center</p>
+      </div>
+    </div>
+    <div class="status-pill" id="systemStatus">System Online</div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="panel stats-panel">
+        <h2>Live Overview</h2>
+        <div class="stats-grid" id="statsGrid"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Active Incidents</h2>
+        <div id="incidentList" class="scroll-list"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Alerts</h2>
+        <div id="alertList" class="scroll-list"></div>
+      </section>
+    </aside>
+
+    <section class="map-section">
+      <div id="map"></div>
+      <div class="map-legend">
+        <span><i class="dot camera"></i> Cameras</span>
+        <span><i class="dot sensor"></i> Sensors</span>
+        <span><i class="dot incident"></i> Incidents</span>
+        <span><i class="dot unit"></i> Dispatch Units</span>
+      </div>
+    </section>
+
+    <aside class="right-panel">
+      <section class="panel">
+        <h2>Modules</h2>
+        <nav class="module-nav">
+          <button class="active" data-tab="cctv">CCTV</button>
+          <button data-tab="iot">IoT Sensors</button>
+          <button data-tab="traffic">Traffic</button>
+          <button data-tab="dispatch">Dispatch</button>
+          <button data-tab="face">Facial AI</button>
+          <button data-tab="anpr">ANPR</button>
+          <button data-tab="citizen">Citizen</button>
+          <button data-tab="vision">OpenCV</button>
+        </nav>
+      </section>
+
+      <section class="panel tab-content active" id="tab-cctv">
+        <h2>Smart CCTV</h2>
+        <div id="cameraList" class="scroll-list"></div>
+      </section>
+
+      <section class="panel tab-content" id="tab-iot">
+        <h2>IoT Monitoring</h2>
+        <div id="sensorList" class="scroll-list"></div>
+      </section>
+
+      <section class="panel tab-content" id="tab-traffic">
+        <h2>Traffic Management</h2>
+        <div id="trafficList" class="scroll-list"></div>
+      </section>
+
+      <section class="panel tab-content" id="tab-dispatch">
+        <h2>Emergency Dispatch</h2>
+        <div id="unitList" class="scroll-list"></div>
+        <div class="dispatch-form">
+          <label>Incident ID</label>
+          <input type="number" id="dispatchIncidentId" placeholder="e.g. 1" />
+          <label>Unit ID</label>
+          <input type="number" id="dispatchUnitId" placeholder="e.g. 1" />
+          <button id="btnDispatch" class="btn primary">Assign Unit</button>
+        </div>
+      </section>
+
+      <section class="panel tab-content" id="tab-face">
+        <h2>Facial Recognition AI (OpenCV SFace)</h2>
+        <p class="meta">Upload a photo to detect faces and match against the watchlist.</p>
+        <label>Watchlist ID to enroll reference photo</label>
+        <input type="number" id="enrollWatchlistId" placeholder="1" min="1" />
+        <input type="file" id="enrollFaceFile" accept="image/*" />
+        <button id="btnEnrollFace" class="btn secondary">Enroll Face</button>
+        <hr style="border-color:var(--border);margin:0.5rem 0" />
+        <input type="file" id="faceScanFile" accept="image/*" />
+        <label><input type="checkbox" id="faceCreateIncident" checked /> Create incident on match</label>
+        <button id="btnFaceScan" class="btn primary">Analyze Image</button>
+        <pre id="faceResult" class="result-box"></pre>
+        <img id="facePreview" alt="Face detection" style="max-width:100%;margin-top:0.5rem;display:none;border-radius:8px;" />
+        <h3>Watchlist</h3>
+        <div id="watchlistList" class="scroll-list small"></div>
+      </section>
+
+      <section class="panel tab-content" id="tab-anpr">
+        <h2>Number Plate Recognition (ANPR)</h2>
+        <p class="meta">Upload a vehicle image. EasyOCR reads plates and checks stolen/wanted database.</p>
+        <input type="file" id="anprFile" accept="image/*" />
+        <label><input type="checkbox" id="anprCreateIncident" checked /> Create incident on alert</label>
+        <button id="btnAnprScan" class="btn primary">Scan Plates</button>
+        <pre id="anprResult" class="result-box"></pre>
+        <img id="anprPreview" alt="ANPR result" style="max-width:100%;margin-top:0.5rem;display:none;border-radius:8px;" />
+        <h3>Vehicle Database</h3>
+        <div id="vehicleList" class="scroll-list small"></div>
+      </section>
+
+      <section class="panel tab-content" id="tab-vision">
+        <h2>OpenCV Motion Detection</h2>
+        <p class="meta" style="margin-bottom:0.5rem">Upload CCTV snapshot or video clip for real motion analysis.</p>
+        <select id="visionZone">
+          <option>Zone 1 - CBD</option>
+          <option>Zone 2 - Intersections</option>
+          <option>Zone 3 - Residential</option>
+          <option>Zone 4 - Industrial</option>
+          <option>Zone 5 - Public Transport</option>
+          <option>Zone 6 - Government</option>
+        </select>
+        <label><input type="checkbox" id="visionCreateIncident" checked /> Create incident if motion found</label>
+        <input type="file" id="visionImageFile" accept="image/*" />
+        <button id="btnVisionImage" class="btn primary">Analyze Image</button>
+        <input type="file" id="visionVideoFile" accept="video/*" />
+        <button id="btnVisionVideo" class="btn primary">Analyze Video</button>
+        <pre id="visionResult" class="result-box"></pre>
+        <img id="visionPreview" alt="Annotated frame" style="max-width:100%;margin-top:0.5rem;display:none;border-radius:8px;" />
+      </section>
+
+      <section class="panel tab-content" id="tab-citizen">
+        <h2>Citizen Reporting</h2>
+        <form id="citizenForm">
+          <input name="reporter_name" placeholder="Your name (optional)" />
+          <select name="report_type">
+            <option value="crime">Crime</option>
+            <option value="theft">Theft</option>
+            <option value="emergency">Emergency</option>
+            <option value="traffic">Traffic</option>
+            <option value="vandalism">Vandalism</option>
+          </select>
+          <textarea name="description" placeholder="Describe the incident..." required></textarea>
+          <input name="latitude" type="number" step="any" value="-17.8292" placeholder="Latitude" />
+          <input name="longitude" type="number" step="any" value="31.0537" placeholder="Longitude" />
+          <button type="submit" class="btn primary">Submit Report</button>
+        </form>
+        <div id="reportList" class="scroll-list small"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Crime Hotspots</h2>
+        <div id="hotspotList" class="scroll-list small"></div>
+      </section>
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HSUSMS Citizen</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    body { max-width: 480px; margin: 0 auto; }
+    .panic-btn {
+      width: 100%;
+      padding: 1.25rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: #dc2626;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">
+      <span class="logo">HS</span>
+      <div>
+        <h1>Citizen App</h1>
+        <p>Report · Emergency · Alerts</p>
+      </div>
+    </div>
+  </header>
+  <main style="padding:1rem;">
+    <button class="panic-btn" id="btnPanic">EMERGENCY PANIC</button>
+    <section class="panel">
+      <h2>Report Incident</h2>
+      <form id="mobileCitizenForm">
+        <input name="reporter_name" placeholder="Name (optional)" />
+        <select name="report_type">
+          <option value="crime">Crime</option>
+          <option value="theft">Theft</option>
+          <option value="traffic">Traffic</option>
+          <option value="vandalism">Vandalism</option>
+        </select>
+        <textarea name="description" required placeholder="What happened?"></textarea>
+        <button type="submit" class="btn primary">Submit</button>
+      </form>
+    </section>
+    <section class="panel">
+      <h2>Alerts</h2>
+      <div id="mobileAlerts"></div>
+    </section>
+    <p class="meta"><a href="/">Command Center</a></p>
+  </main>
+  <script>
+    const API = "/api";
+    document.getElementById("btnPanic").onclick = async () => {
+      let lat = -17.8292, lng = 31.0537;
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(p => {
+          lat = p.coords.latitude; lng = p.coords.longitude;
+        });
+      }
+      const r = await fetch(API + "/citizen/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          report_type: "emergency",
+          description: "PANIC BUTTON - Citizen mobile web",
+          latitude: lat,
+          longitude: lng,
+        }),
+      });
+      const j = await r.json();
+      alert("Emergency sent! Reference #" + j.id);
+    };
+    document.getElementById("mobileCitizenForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const body = Object.fromEntries(fd);
+      body.latitude = -17.8292;
+      body.longitude = 31.0537;
+      if (navigator.geolocation) {
+        const pos = await new Promise(res => navigator.geolocation.getCurrentPosition(res, () => res(null)));
+        if (pos) { body.latitude = pos.coords.latitude; body.longitude = pos.coords.longitude; }
+      }
+      await fetch(API + "/citizen/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      alert("Report submitted.");
+      e.target.reset();
+    };
+    fetch(API + "/alerts?acknowledged=false").then(r => r.json()).then(items => {
+      document.getElementById("mobileAlerts").innerHTML = items.map(a =>
+        `<div class="list-item"><div class="title">${a.message}</div><div class="meta">${a.zone}</div></div>`
+      ).join("") || "<p class='meta'>No alerts</p>";
+    });
+  </script>
+</body>
+</html>

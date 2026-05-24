@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+backend/.venv/
+data/*.db
+data/uploads/*
+data/watchlist_faces/*
+!data/watchlist_faces/.gitkeep
+backend/models/*.onnx
+!backend/models/.gitkeep
+.env
+*.log
+.DS_Store
+.idea/
+*.iml
